@@ -1,0 +1,47 @@
+Operating system support,,,,,,,,
+model,release(d),,discontinued,support,,,,launch price
+,with OS,date,,ended,final OS,lifespan,,
+,,,,,,max,min,
+iPhone,iPhone OS 1.0,"June 29, 2007","June 9, 2008","June 20, 2010",iPhone OS 3.1.3,"2 years, 11 months",2 years,$499/$599*
+iPhone 3G,iPhone OS 2.0,"July 11, 2008","August 9, 2010","March 3, 2011",iOS 4.2.1,"2 years, 7 months",6 months,$199/$299*
+,,,,,,,,499
+iPhone 3GS,iPhone OS 3.0,"June 19, 2009","September 12, 2012","September 18, 2013",iOS 6.1.6,"4 years, 2 months",1 year,$199/$299*
+,,,,,,,,$599/$699
+iPhone 4,iOS 4.0,"June 24, 2010","September 10, 2013","September 17, 2014",iOS 7.1.2,"4 years, 2 months",1 year,$199/$299*
+,,,,,,,,$649/$749
+iPhone 4S,iOS 5.0,"October 14, 2011","September 9, 2014","September 12, 2016",iOS 9.3.5,"4 years, 10 months",2 years,$199/$299/$399*
+,,,,"(late, single update: July 22, 2019)",(9.3.6),,,$649/$749/$849
+iPhone 5,iOS 6.0,"September 21, 2012","September 10, 2013","September 18, 2017",iOS 10.3.3,"4 years, 11 months",4 years,$199/$299/$399*
+,,,,"(late, single update: July 22, 2019)",(10.3.4),,,$649/$749/$849
+iPhone 5C,iOS 7.0,"September 20, 2013","September 9, 2015","September 18, 2017",iOS 10.3.3,"3 years, 11 months",2 years,$99/$199*
+,,,,,,,,$549/$649
+iPhone 5S,iOS 7.0,"September 20, 2013","March 21, 2016","September 18, 2019",iOS 12.4.1,"5 years, 11 months","3 years, 5 months",$199/$299/$399*
+,,,,"(latest, exclusive update: November 5, 2020)",(12.4.9),,,$649/$749/$849
+iPhone 6 / 6 Plus,iOS 8.0,"September 19, 2014","September 7, 2016","September 18, 2019",iOS 12.4.1,"4 years, 11 months",3 years,$199/$299/$399*
+,,,,"(latest, exclusive update: November 5, 2020)",(12.4.9),,,$649/$749/$849
+,,,,,,,,Plus:$299/$399/$499*
+,,,,,,,,Plus:$749/$849/$949
+iPhone 6S / 6S Plus,iOS 9.0.1,"September 25, 2015","September 12, 2018",current,latest iOS,"> 5 years, 1 month","> 2 years, 2 months",$199/$299/$399*
+,,,,,,,,$649/$749/$849
+,,,,,,,,Plus:$299/$399/$499*
+,,,,,,,,Plus:$749/$849/$949
+iPhone SE (1st),iOS 9.3,"March 31, 2016","September 12, 2018",current,latest iOS,"> 4 years, 7 months","> 2 years, 2 months",$399/$499
+iPhone 7 / 7 Plus,iOS 10.0.1,"September 16, 2016","September 10, 2019",current,latest iOS,"> 4 years, 2 months","> 1 year, 2 months",$199/$299/$399*
+,,,,,,,,$649/$749/$849
+,,,,,,,,Plus:$319/$419/$519*
+,,,,,,,,Plus:$769/$869/$969
+iPhone 8 / 8 Plus,iOS 11.0,"September 22, 2017","April 15, 2020",current,latest iOS,"> 3 years, 2 months",> 7 months,$699/$849
+,,,,,,,,Plus:$799/$949
+iPhone X,iOS 11.0.1,"November 3, 2017","September 12, 2018",current,latest iOS,> 3 years,"> 2 years, 2 months",$549/$699*
+,,,,,,,,$999/$1149
+iPhone XS / XS Max,iOS 12.0,"September 21, 2018","September 10, 2019",current,latest iOS,"> 2 years, 2 months","> 1 year, 2 months",$999/$1149/$1349
+,,,,,,,,Max:$1099/$1249/$1449
+iPhone XR,iOS 12.0,"October 26, 2018",,current,latest iOS,> 2 years,,$749/$799/$899
+iPhone 11,iOS 13.0,"September 20, 2019",,current,latest iOS,"> 1 year, 2 months",,$699/$749/$849
+iPhone 11 Pro / 11 Pro Max,iOS 13.0,"September 20, 2019","October 13, 2020",current,latest iOS,"> 1 year, 2 months",,$999/$1149/$1349
+,,,,,,,,Max:$1099/$1249/$1449
+iPhone SE (2nd),iOS 13.4,"April 24, 2020",,current,latest iOS,> 6 months,,$399/$449/$549
+iPhone 12 / 12 Mini,iOS 14.1 (12) / iOS 14.2 (12 Mini),"October 23, 2020 (12) / November 13, 2020 (12 Mini)",,current,latest iOS,>0 months,,$799/$849/$949
+,,,,,,,,Mini:$699/$749/$849
+iPhone 12 Pro / 12 Pro Max,iOS 14.1 (12 Pro) / iOS 14.2 (12 Pro Max),"October 23, 2020 (12 Pro) / November 13, 2020 (12 Pro Max)",,current,latest iOS,>0 months,,$999/$1099/$1299
+,,,,,,,,Max:$1099/$1199/$1399
