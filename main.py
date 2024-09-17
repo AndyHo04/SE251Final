@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import re
 import _tkinter as tk
 
 
@@ -69,4 +70,56 @@ if __name__ == "__main__":
     pipeline = Pipeline(data)
     pipeline.set_headers()
     value = pipeline.get_index_value(8)
-    print(value)
+    #print(value)
+   
+   # Get the first column name
+    first_column_name = data.columns[0]
+    
+    #drop the first value of the first column
+    data = data.drop(data.index[0])
+    
+    # Access the first column data
+    first_column_data = data[first_column_name]
+    
+    # Drop NaN values from the first column data
+    first_column_data = first_column_data.dropna()
+    
+    # Get the launch price column name
+    launch_price_column_name = data.columns[-1]
+    
+    # Access the launch price column data
+    launch_price_data = data[launch_price_column_name]
+    
+    # Drop NaN values from the launch price data
+    launch_price_data = launch_price_data.dropna()
+    
+    # Extract numerical values from the launch price data
+    def extract_price(price_str):
+        price_str = str(price_str)
+        match = re.search(r'\d+', price_str.replace(',', ''))
+        return float(match.group()) if match else np.nan
+    
+    launch_price_data = launch_price_data.apply(extract_price)
+    
+    # Drop NaN values from the launch price data after extraction
+    launch_price_data = launch_price_data.dropna()
+    
+    # Ensure both series have the same length
+    min_length = min(len(first_column_data), len(launch_price_data))
+    first_column_data = first_column_data.iloc[:min_length]
+    launch_price_data = launch_price_data.iloc[:min_length]
+    
+    # Fit a linear polynomial to the data
+    coefficients = np.polyfit(range(len(first_column_data)), launch_price_data, 1)
+    polynomial = np.poly1d(coefficients)
+    best_fit_line = polynomial(range(len(first_column_data)))
+    
+    # Plot the data
+    plt.plot(first_column_data, launch_price_data)
+    plt.plot(first_column_data, best_fit_line, color='red', linestyle='--', label='Best Fit Line')
+    plt.xlabel("IPhone models")
+    plt.ylabel("Launch price($)")
+    plt.title('IPhone launch prices')
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+    plt.show()
