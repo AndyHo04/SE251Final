@@ -27,7 +27,6 @@ class Pipeline:
     def _get_next_possible_parent(self, index: int, level: int) -> HeaderItem:
         while index >= 0:
             node = self.headers.get(index - 1, None)
-            print(node)
             while node.level >= 0:
                 if node.level < level:
                     return node
@@ -52,16 +51,12 @@ class Pipeline:
                     continue
 
                 current_index_value = self.headers.get(index, None)
-                item = HeaderItem(value, current_row, None)
+                item = HeaderItem(value, current_row, current_index_value)
 
-                item.parent = current_index_value
                 if item.parent == None and item.level != 0:
                     item.parent = self._get_next_possible_parent(index, item.level)
 
-                if current_index_value is not None:
-                    self.headers[index] = item
-                else:
-                    self.headers[index] = item
+                self.headers[index] = item
 
             current_row += 1
 
