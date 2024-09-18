@@ -186,31 +186,24 @@ if __name__ == "__main__":
             plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['carrier avg'][i]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9)
             plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['unlocked avg'][i]), textcoords="offset points", xytext=(0,-15), ha='center', fontsize=9)
 
-    release_column_data = pipeline.data["release(d).date"]
-    release_column_data = release_column_data.dropna()
-
-    unlocked_avg_data = pipeline.data['unlocked avg']
-    unlocked_avg_data = unlocked_avg_data.dropna()
-
-    carrier_avg_data = pipeline.data['carrier avg']
-    carrier_avg_data = unlocked_avg_data.dropna()
-
-    release_column_data = release_column_data.reindex(unlocked_avg_data.index)
-    unlocked_avg_data = unlocked_avg_data.reindex(release_column_data.index)
-    carrier_avg_data = carrier_avg_data.reindex(release_column_data.index)
-
-    # trendline for unlocked price
-    coefficient = np.polyfit(range(len(release_column_data)), unlocked_avg_data, 1)
-    polynomial = np.poly1d(coefficient)    
-    best_fit_line = polynomial(range(len(release_column_data)))
-    plt.plot(release_column_data, best_fit_line, label="Unlocked Price Trendline", linestyle='--', color='orange')
     
-    # trend line for carrier price
-    coefficient = np.polyfit(range(len(release_column_data)), carrier_avg_data, 1)
-    polynomial = np.poly1d(coefficient)
-    best_fit_line = polynomial(range(len(release_column_data)))
-    plt.plot(release_column_data, best_fit_line, label="Carrier Price Trendline", linestyle='--', color='blue')
+    def create_trendline(column: str, color: str) -> None:
+        release_column_data = pipeline.data["release(d).date"]
+        release_column_data = release_column_data.dropna()
 
+        column_data = pipeline.data[column]
+        column_data = column_data.dropna()
+
+        release_column_data = release_column_data.reindex(column_data.index)
+        column_data = column_data.reindex(release_column_data.index)
+
+        coefficient = np.polyfit(range(len(release_column_data)), column_data, 1)
+        polynomial = np.poly1d(coefficient)    
+        best_fit_line = polynomial(range(len(release_column_data)))
+        plt.plot(release_column_data, best_fit_line, label=f"{column} Trendline", linestyle='--', color=color)
+
+    create_trendline("carrier avg", "blue")
+    create_trendline("unlocked avg", "orange")
 
     plt.xlabel("Release Dates")
     plt.ylabel("Launch price($)")
