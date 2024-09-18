@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import re
+from statistics import mean
+from numpy.polynomial.polynomial import Polynomial
 
 
 class Pipeline:
@@ -168,53 +169,50 @@ if __name__ == "__main__":
     pipeline.clean_multi_values()
     pipeline.format_prices()
     pipeline.format_dates()
-    pipeline.print_data()
     pipeline.save_data("CleanedData.xlsx")
 
-    # Get the first column name
-    first_column_name = pipeline.data.columns[2]
+    pipeline.data['carrier avg'] = pipeline.data['carrier price'].apply(lambda x: np.mean(x) if x != '' else np.nan).dropna()
+    pipeline.data['unlocked avg'] = pipeline.data['unlocked price'].apply(lambda x: np.mean(x) if x != '' else np.nan).dropna()
 
-    # Access the first column data
-    first_column_data = pipeline.data[first_column_name]
+    plt.figure(figsize=(14, 8))
+    plt.plot(pipeline.data['release(d).date'], pipeline.data['carrier avg'], marker='o', label='Carrier Price Average')
+    plt.plot(pipeline.data['release(d).date'], pipeline.data['unlocked avg'], marker='o', label='Unlocked Price Average')
 
-    # Drop NaN values from the first column data
-    first_column_data = first_column_data.dropna()
+    for i, txt in enumerate(pipeline.data['model']):
+        if txt == "iPhone XS Max":
+            plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['carrier avg'][i]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9)
+            plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['unlocked avg'][i]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9)
+        else:
+            plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['carrier avg'][i]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9)
+            plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['unlocked avg'][i]), textcoords="offset points", xytext=(0,-15), ha='center', fontsize=9)
+
+    release_column_data = pipeline.data["release(d).date"]
+    release_column_data = release_column_data.dropna()
+
+    unlocked_avg_data = pipeline.data['unlocked avg']
+    unlocked_avg_data = unlocked_avg_data.dropna()
+
+    carrier_avg_data = pipeline.data['carrier avg']
+    carrier_avg_data = unlocked_avg_data.dropna()
+
+    release_column_data = release_column_data.reindex(unlocked_avg_data.index)
+    unlocked_avg_data = unlocked_avg_data.reindex(release_column_data.index)
+    carrier_avg_data = carrier_avg_data.reindex(release_column_data.index)
+
+    # trendline for unlocked price
+    coefficient = np.polyfit(range(len(release_column_data)), unlocked_avg_data, 1)
+    polynomial = np.poly1d(coefficient)    
+    best_fit_line = polynomial(range(len(release_column_data)))
+    plt.plot(release_column_data, best_fit_line, label="Unlocked Price Trendline", linestyle='--', color='orange')
     
-    print(first_column_data)
+    # trend line for carrier price
+    coefficient = np.polyfit(range(len(release_column_data)), carrier_avg_data, 1)
+    polynomial = np.poly1d(coefficient)
+    best_fit_line = polynomial(range(len(release_column_data)))
+    plt.plot(release_column_data, best_fit_line, label="Carrier Price Trendline", linestyle='--', color='blue')
 
-    # Get the launch price column name
-    launch_price_column_name = pipeline.data.columns[8]
 
-    # Access the launch price column data
-    launch_price_data = pipeline.data[launch_price_column_name]
-
-    # Drop NaN values from the launch price data
-    launch_price_data = launch_price_data.dropna()
-
-    # Extract numerical values from the launch price data
-    def extract_price(price_str):
-        price_str = str(price_str)
-        match = re.search(r"\d+", price_str.replace(",", ""))
-        return float(match.group()) if match else np.nan
-
-    launch_price_data = launch_price_data.apply(extract_price)
-
-    # Drop NaN values from the launch price data after extraction
-    launch_price_data = launch_price_data.dropna()
-
-    # Ensure both series have the same length by aligning indices
-    first_column_data = first_column_data.reindex(launch_price_data.index)
-    launch_price_data = launch_price_data.reindex(first_column_data.index)
-
-    # Fit a linear polynomial to the data
-    coefficients = np.polyfit(range(len(first_column_data)), launch_price_data, 1)
-    polynomial = np.poly1d(coefficients)
-    best_fit_line = polynomial(range(len(first_column_data)))
-
-    # Plot the data
-    plt.plot(first_column_data, launch_price_data, marker='o', linestyle='-', label='Launch Prices')
-    plt.plot(first_column_data, best_fit_line, color="red", linestyle="--", label="Best Fit Line")
-    plt.xlabel("Date")
+    plt.xlabel("Release Dates")
     plt.ylabel("Launch price($)")
     plt.title("iPhone Launch Carrier Prices")
     plt.xticks(rotation=90)
