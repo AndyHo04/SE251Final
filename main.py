@@ -241,7 +241,7 @@ if __name__ == "__main__":
         return future_date, future_price
 
     # Get user input for future dates
-    future_dates = ["2025-09-16", "2026-09-16", "2028-09-16"]
+    future_dates = ["2026-09-16", "2027-09-16", "2029-09-16"]
     future_dates_dt = []
     future_prices = []
 
@@ -250,6 +250,7 @@ if __name__ == "__main__":
         if future_date_dt is not None:
             future_dates_dt.append(future_date_dt)
             future_prices.append(future_price)
+            
 
     # Combine original and future data
     all_dates = pd.concat([first_column_data, pd.Series(future_dates_dt)])
@@ -265,3 +266,4 @@ if __name__ == "__main__":
     plt.legend()
     plt.tight_layout()
     plt.show()
+    print(future_prices)
