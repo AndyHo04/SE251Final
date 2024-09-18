@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import re
+from statistics import mean
+from numpy.polynomial.polynomial import Polynomial
 
 
 class Pipeline:
@@ -168,54 +169,50 @@ if __name__ == "__main__":
     pipeline.clean_multi_values()
     pipeline.format_prices()
     pipeline.format_dates()
-    pipeline.print_data()
     pipeline.save_data("CleanedData.xlsx")
 
-    # Get the first column name
-    first_column_name = pipeline.data.columns[2]
+    pipeline.data['carrier avg'] = pipeline.data['carrier price'].apply(lambda x: np.mean(x) if x != '' else np.nan).dropna()
+    pipeline.data['unlocked avg'] = pipeline.data['unlocked price'].apply(lambda x: np.mean(x) if x != '' else np.nan).dropna()
 
-    # Access the first column data
-    first_column_data = pipeline.data[first_column_name]
+    plt.figure(figsize=(14, 8))
+    plt.plot(pipeline.data['release(d).date'], pipeline.data['carrier avg'], marker='o', label='Carrier Price Average')
+    plt.plot(pipeline.data['release(d).date'], pipeline.data['unlocked avg'], marker='o', label='Unlocked Price Average')
 
-    # Drop NaN values from the first column data
-    first_column_data = first_column_data.dropna()
+    for i, txt in enumerate(pipeline.data['model']):
+        if txt == "iPhone XS Max":
+            plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['carrier avg'][i]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9)
+            plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['unlocked avg'][i]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9)
+        else:
+            plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['carrier avg'][i]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9)
+            plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['unlocked avg'][i]), textcoords="offset points", xytext=(0,-15), ha='center', fontsize=9)
+
+    release_column_data = pipeline.data["release(d).date"]
+    release_column_data = release_column_data.dropna()
+
+    unlocked_avg_data = pipeline.data['unlocked avg']
+    unlocked_avg_data = unlocked_avg_data.dropna()
+
+    carrier_avg_data = pipeline.data['carrier avg']
+    carrier_avg_data = unlocked_avg_data.dropna()
+
+    release_column_data = release_column_data.reindex(unlocked_avg_data.index)
+    unlocked_avg_data = unlocked_avg_data.reindex(release_column_data.index)
+    carrier_avg_data = carrier_avg_data.reindex(release_column_data.index)
+
+    # trendline for unlocked price
+    coefficient = np.polyfit(range(len(release_column_data)), unlocked_avg_data, 1)
+    polynomial = np.poly1d(coefficient)    
+    best_fit_line = polynomial(range(len(release_column_data)))
+    plt.plot(release_column_data, best_fit_line, label="Unlocked Price Trendline", linestyle='--', color='orange')
     
-    print(first_column_data)
-
-    # Get the launch price column name
-    launch_price_column_name = pipeline.data.columns[8]
-
-    # Access the launch price column data
-    launch_price_data = pipeline.data[launch_price_column_name]
-
-    # Drop NaN values from the launch price data
-    launch_price_data = launch_price_data.dropna()
-
-    # Extract numerical values from the launch price data
-    def extract_price(price_str):
-        price_str = str(price_str)
-        match = re.search(r"\d+", price_str.replace(",", ""))
-        return float(match.group()) if match else np.nan
-
-    launch_price_data = launch_price_data.apply(extract_price)
-
-    # Drop NaN values from the launch price data after extraction
-    launch_price_data = launch_price_data.dropna()
-
-    # Ensure both series have the same length by aligning indices
-    first_column_data = first_column_data.reindex(launch_price_data.index)
-    launch_price_data = launch_price_data.reindex(first_column_data.index)
+    # trend line for carrier price
+    coefficient = np.polyfit(range(len(release_column_data)), carrier_avg_data, 1)
+    polynomial = np.poly1d(coefficient)
+    best_fit_line = polynomial(range(len(release_column_data)))
+    plt.plot(release_column_data, best_fit_line, label="Carrier Price Trendline", linestyle='--', color='blue')
 
 
-    # Fit a linear polynomial to the data
-    coefficients = np.polyfit(range(len(first_column_data)), launch_price_data, 1)
-    polynomial = np.poly1d(coefficients)
-    best_fit_line = polynomial(range(len(first_column_data)))
-
-    # Plot the data
-    plt.plot(first_column_data, launch_price_data, marker='o', linestyle='-', label='Launch Prices')
-    plt.plot(first_column_data, best_fit_line, color="red", linestyle="--", label="Best Fit Line")
-    plt.xlabel("Date")
+    plt.xlabel("Release Dates")
     plt.ylabel("Launch price($)")
     plt.title("iPhone Launch Carrier Prices")
     plt.xticks(rotation=90)
@@ -223,7 +220,7 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
     
-    # Extrapolate future prices
+   
     # Extrapolate future prices and add to the graph
     def extrapolate_price(future_date_str):
         future_date = pd.to_datetime(future_date_str, errors='coerce')
@@ -232,38 +229,43 @@ if __name__ == "__main__":
             return None, None
 
         # Calculate the number of days from the last known date
-        last_known_date = first_column_data.iloc[-1]
+        last_known_date = release_column_data.iloc[-1]
         days_from_last_known = (future_date - last_known_date).days
 
         # Extrapolate the price
-        future_index = len(first_column_data) + days_from_last_known
-        future_price = polynomial(future_index)
-        return future_date, future_price
+        future_index = len(release_column_data) + days_from_last_known
+        future_price_unlocked = polynomial(future_index)
+        future_price_carrier = polynomial(future_index)
+        return future_date, future_price_unlocked, future_price_carrier
 
     # Get user input for future dates
-    future_dates = ["2026-09-16", "2027-09-16", "2029-09-16"]
+    future_dates = ["2025-09-16", "2026-09-16", "2028-09-16"]
     future_dates_dt = []
-    future_prices = []
+    future_prices_unlocked = []
+    future_prices_carrier = []
 
     for future_date in future_dates:
-        future_date_dt, future_price = extrapolate_price(future_date)
+        future_date_dt, future_price_unlocked, future_price_carrier = extrapolate_price(future_date)
         if future_date_dt is not None:
             future_dates_dt.append(future_date_dt)
-            future_prices.append(future_price)
-            
+            future_prices_unlocked.append(future_price_unlocked)
+            future_prices_carrier.append(future_price_carrier)
 
     # Combine original and future data
-    all_dates = pd.concat([first_column_data, pd.Series(future_dates_dt)])
-    all_prices = pd.concat([launch_price_data, pd.Series(future_prices)])
+    all_dates = pd.concat([release_column_data, pd.Series(future_dates_dt)])
+    all_prices_unlocked = pd.concat([unlocked_avg_data, pd.Series(future_prices_unlocked)])
+    all_prices_carrier = pd.concat([carrier_avg_data, pd.Series(future_prices_carrier)])
 
     # Plot the extended data
-    plt.plot(first_column_data, launch_price_data, marker='o', linestyle='-', label='Launch Prices')
-    plt.plot(all_dates, all_prices, marker='x', linestyle='--', color='green', label='Extrapolated Prices')
-    plt.xlabel("Date")
+    plt.figure(figsize=(14, 8))
+    plt.plot(release_column_data, unlocked_avg_data, marker='o', linestyle='-', label='Unlocked Price Average')
+    plt.plot(release_column_data, carrier_avg_data, marker='o', linestyle='-', label='Carrier Price Average')
+    plt.plot(all_dates, all_prices_unlocked, marker='x', linestyle='--', color='orange', label='Extrapolated Unlocked Prices')
+    plt.plot(all_dates, all_prices_carrier, marker='x', linestyle='--', color='blue', label='Extrapolated Carrier Prices')
+    plt.xlabel("Release Dates")
     plt.ylabel("Launch price($)")
     plt.title("iPhone Launch Carrier Prices with Extrapolation")
     plt.xticks(rotation=90)
     plt.legend()
     plt.tight_layout()
     plt.show()
-    print(future_prices)
