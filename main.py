@@ -117,26 +117,22 @@ if __name__ == "__main__":
     pipeline.save_data("CleanedData.xlsx")
     # pipeline.clean_dates()
     # print(pipeline.get_phone_models())
-
-    exit()
+    
 
     # Get the first column name
-    first_column_name = data.columns[0]
-
-    # drop the first value of the first column
-    data = data.drop(data.index[0])
+    first_column_name = pipeline.data.columns[0]
 
     # Access the first column data
-    first_column_data = data[first_column_name]
+    first_column_data = pipeline.data[first_column_name]
 
     # Drop NaN values from the first column data
     first_column_data = first_column_data.dropna()
 
     # Get the launch price column name
-    launch_price_column_name = data.columns[-1]
+    launch_price_column_name = pipeline.data.columns[8]
 
     # Access the launch price column data
-    launch_price_data = data[launch_price_column_name]
+    launch_price_data = pipeline.data[launch_price_column_name]
 
     # Drop NaN values from the launch price data
     launch_price_data = launch_price_data.dropna()
@@ -158,23 +154,17 @@ if __name__ == "__main__":
     launch_price_data = launch_price_data.iloc[:min_length]
 
     # Fit a linear polynomial to the data
-    coefficients = np.polyfit(
-        range(len(first_column_data)), launch_price_data, 1)
+    coefficients = np.polyfit(range(len(first_column_data)), launch_price_data, 1)
     polynomial = np.poly1d(coefficients)
     best_fit_line = polynomial(range(len(first_column_data)))
 
     # Plot the data
-    plt.plot(first_column_data, launch_price_data)
-    plt.plot(
-        first_column_data,
-        best_fit_line,
-        color="red",
-        linestyle="--",
-        label="Best Fit Line",
-    )
-    plt.xlabel("IPhone models")
+    plt.plot(first_column_data, launch_price_data, marker='o', linestyle='-', label='Launch Prices')
+    plt.plot(first_column_data, best_fit_line, color="red", linestyle="--", label="Best Fit Line")
+    plt.xlabel("Date")
     plt.ylabel("Launch price($)")
-    plt.title("IPhone launch prices")
+    plt.title("iPhone Launch Prices")
     plt.xticks(rotation=90)
+    plt.legend()
     plt.tight_layout()
     plt.show()
