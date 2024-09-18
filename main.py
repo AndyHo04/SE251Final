@@ -171,6 +171,11 @@ if __name__ == "__main__":
     pipeline.format_dates()
     pipeline.save_data("CleanedData.xlsx")
 
+    future_dates = ["2025-09-16", "2026-09-16", "2028-09-16"]
+
+    pipeline.data['carrier price'] = pipeline.data['carrier price'].apply(lambda x: x if x != '' else np.nan).dropna()
+    pipeline.data['unlocked price'] = pipeline.data['unlocked price'].apply(lambda x: x if x != '' else np.nan).dropna()
+
     pipeline.data['carrier avg'] = pipeline.data['carrier price'].apply(lambda x: np.mean(x) if x != '' else np.nan).dropna()
     pipeline.data['unlocked avg'] = pipeline.data['unlocked price'].apply(lambda x: np.mean(x) if x != '' else np.nan).dropna()
 
@@ -178,22 +183,22 @@ if __name__ == "__main__":
     plt.plot(pipeline.data['release(d).date'], pipeline.data['carrier avg'], marker='o', label='Carrier Price Average')
     plt.plot(pipeline.data['release(d).date'], pipeline.data['unlocked avg'], marker='o', label='Unlocked Price Average')
 
+    last_graphed = ""
     for i, txt in enumerate(pipeline.data['model']):
-        if txt == "iPhone XS Max":
-            plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['carrier avg'][i]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9)
-            plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['unlocked avg'][i]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9)
+        if " " not in txt:
+            last_graphed = txt
+        elif txt.split(" ")[1][:1] == last_graphed:
+            continue
         else:
-            plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['carrier avg'][i]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9)
-            plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['unlocked avg'][i]), textcoords="offset points", xytext=(0,-15), ha='center', fontsize=9)
+            last_graphed = txt.split(" ")[1][:1]
+
+        plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['unlocked avg'][i]), textcoords="offset points", xytext=(0,-15), ha='center', fontsize=9)
+        plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['carrier avg'][i]), textcoords="offset points", xytext=(0,-15), ha='center', fontsize=9)
 
     
-    def create_trendline(column: str, color: str) -> None:
-        release_column_data = pipeline.data["release(d).date"]
-        release_column_data = release_column_data.dropna()
-
-        column_data = pipeline.data[column]
-        column_data = column_data.dropna()
-
+    def create_trendline(column: str, color: str):
+        release_column_data = pipeline.data["release(d).date"].dropna()
+        column_data = pipeline.data[column].dropna()
         release_column_data = release_column_data.reindex(column_data.index)
         column_data = column_data.reindex(release_column_data.index)
 
@@ -201,63 +206,28 @@ if __name__ == "__main__":
         polynomial = np.poly1d(coefficient)    
         best_fit_line = polynomial(range(len(release_column_data)))
         plt.plot(release_column_data, best_fit_line, label=f"{column} Trendline", linestyle='--', color=color)
+        
+        return polynomial, len(release_column_data) - 1, release_column_data.iloc[-1]
+        
 
-    create_trendline("carrier avg", "blue")
-    create_trendline("unlocked avg", "orange")
+    def predict_future_trendline(polynomial, last_index, last_date, num_future_points: int, color: str, column: str):
+        future_indices = np.arange(last_index + 1, last_index + 1 + num_future_points)
+        future_y = polynomial(future_indices)
+        date_range = pd.date_range(start=last_date + pd.DateOffset(days=1), periods=num_future_points, freq='YS')
+        plt.plot(date_range, future_y, label=f"{column} Future Trendline", linestyle=':', color=color)
+          
+
+    unlocked_trendline_polynomial, liu, ldu = create_trendline("unlocked avg", "orange")
+    predict_future_trendline(polynomial=unlocked_trendline_polynomial, last_index=liu, last_date=ldu, num_future_points=5, color='orange', column='unlocked avg')
+    
+    
+    carrier_trendline_polynomial, lic, ldc = create_trendline("carrier avg", "blue")
+    predict_future_trendline(polynomial=carrier_trendline_polynomial, last_index=lic, last_date=ldc, num_future_points=5, color='blue', column='carrier avg')
+    
 
     plt.xlabel("Release Dates")
     plt.ylabel("Launch price($)")
     plt.title("iPhone Launch Carrier Prices")
-    plt.xticks(rotation=90)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-    
-   
-    # Extrapolate future prices and add to the graph
-    def extrapolate_price(future_date_str):
-        future_date = pd.to_datetime(future_date_str, errors='coerce')
-        if pd.isna(future_date):
-            print("Invalid date format. Please enter a date in the format YYYY-MM-DD.")
-            return None, None
-
-        # Calculate the number of days from the last known date
-        last_known_date = release_column_data.iloc[-1]
-        days_from_last_known = (future_date - last_known_date).days
-
-        # Extrapolate the price
-        future_index = len(release_column_data) + days_from_last_known
-        future_price_unlocked = polynomial(future_index)
-        future_price_carrier = polynomial(future_index)
-        return future_date, future_price_unlocked, future_price_carrier
-
-    # Get user input for future dates
-    future_dates = ["2025-09-16", "2026-09-16", "2028-09-16"]
-    future_dates_dt = []
-    future_prices_unlocked = []
-    future_prices_carrier = []
-
-    for future_date in future_dates:
-        future_date_dt, future_price_unlocked, future_price_carrier = extrapolate_price(future_date)
-        if future_date_dt is not None:
-            future_dates_dt.append(future_date_dt)
-            future_prices_unlocked.append(future_price_unlocked)
-            future_prices_carrier.append(future_price_carrier)
-
-    # Combine original and future data
-    all_dates = pd.concat([release_column_data, pd.Series(future_dates_dt)])
-    all_prices_unlocked = pd.concat([unlocked_avg_data, pd.Series(future_prices_unlocked)])
-    all_prices_carrier = pd.concat([carrier_avg_data, pd.Series(future_prices_carrier)])
-
-    # Plot the extended data
-    plt.figure(figsize=(14, 8))
-    plt.plot(release_column_data, unlocked_avg_data, marker='o', linestyle='-', label='Unlocked Price Average')
-    plt.plot(release_column_data, carrier_avg_data, marker='o', linestyle='-', label='Carrier Price Average')
-    plt.plot(all_dates, all_prices_unlocked, marker='x', linestyle='--', color='orange', label='Extrapolated Unlocked Prices')
-    plt.plot(all_dates, all_prices_carrier, marker='x', linestyle='--', color='blue', label='Extrapolated Carrier Prices')
-    plt.xlabel("Release Dates")
-    plt.ylabel("Launch price($)")
-    plt.title("iPhone Launch Carrier Prices with Extrapolation")
     plt.xticks(rotation=90)
     plt.legend()
     plt.tight_layout()
