@@ -39,9 +39,10 @@ class Pipeline:
         self.headers = {}
 
     def set_headers(self) -> None:
-        self.data.columns = [".".join([str(col).strip(
-        ) for col in cols if "Unnamed" not in str(col)]) for cols in data.columns]
-        self.data = data.rename(columns={"launch price": "carrier price"})
+        self.data.columns = [
+            ".".join([str(col).strip() for col in cols if "Unnamed" not in str(col)]) for cols in self.data.columns
+        ]
+        self.data = self.data.rename(columns={"launch price": "carrier price"})
         self.data["unlocked price"] = ""
         self.data["late support ended"] = ""
         self.data["late final OS"] = ""
@@ -54,8 +55,11 @@ class Pipeline:
     def clean_prices(self) -> None:
         for index in self.data.index:
             if index + 1 >= len(self.data):
+                if not str(self.data.iloc[index, 8]).endswith("*"):
+                    self.data.iat[index, 9] = self.data.iat[index, 8]
+                    self.data.iat[index, 8] = ""
                 break
-
+            
             if pd.isna(self.data.iloc[index+1, 0]):
                 if not pd.isna(self.data.iat[index + 1, 4]):
                     self.data.iat[index, 10] = self.data.iat[index + 1, 4]
@@ -72,9 +76,8 @@ class Pipeline:
                 if not str(self.data.iloc[index, 8]).endswith("*"):
                     self.data.iat[index, 9] = self.data.iat[index, 8]
                     self.data.iat[index, 8] = ""
-            
+
             self.data.reset_index(drop=True, inplace=True)
-            
 
     def clean_multi_values(self) -> None:
         for index in self.data.index:
@@ -83,6 +86,13 @@ class Pipeline:
                     models = self.data.iloc[index, 0].split(" / ")
                     self.data.iat[index, 0] = models[0]
                     self.data.iat[index + 1, 0] = "iPhone " + models[1]
+                    self.data.iat[index + 1, 1] = self.data.iat[index, 1]
+                    self.data.iat[index + 1, 2] = self.data.iat[index, 2]
+                    self.data.iat[index + 1, 3] = self.data.iat[index, 3]
+                    self.data.iat[index + 1, 4] = self.data.iat[index, 4]
+                    self.data.iat[index + 1, 5] = self.data.iat[index, 5]
+                    self.data.iat[index + 1, 6] = self.data.iat[index, 6]
+                    self.data.iat[index + 1, 7] = self.data.iat[index, 7]
                 if " / " in str(self.data.iloc[index, 1]):
                     os_releases = self.data.iloc[index, 1].split(" / ")
                     self.data.iat[index, 1] = os_releases[0].split(" (")[0]
@@ -90,17 +100,30 @@ class Pipeline:
                 if " / " in str(self.data.iloc[index, 2]):
                     release_dates = self.data.iloc[index, 2].split(" / ")
                     self.data.iat[index, 2] = release_dates[0]
-                    self.data.iat[index + 1, 2] = release_dates[1].split(" (")[0]
+                    self.data.iat[index + 1,
+                                  2] = release_dates[1].split(" (")[0]
 
             if index + 1 >= len(self.data):
                 break
-            
-            self.data.iat[index + 1, 3] = self.data.iat[index, 3]
-            self.data.iat[index + 1, 4] = self.data.iat[index, 4]
-            self.data.iat[index + 1, 5] = self.data.iat[index, 5]
-            self.data.iat[index + 1, 6] = self.data.iat[index, 6]
-            self.data.iat[index + 1, 7] = self.data.iat[index, 7]
-    
+
+    def format_prices(self) -> None:
+        def clean_string_number(value: str) -> float:
+            if ":" in value:
+                value = value.split(":")[1]
+
+            return float(value)
+
+        for index in self.data.index:
+            carrier_price = self.data.iat[index, 8]
+            if carrier_price:
+                carrier_prices = list(map(clean_string_number, str(carrier_price).replace("$", "").replace("*", "").split("/")))
+                self.data.iat[index, 8] = carrier_prices
+
+            unlocked_price = self.data.iat[index, 9]
+            if unlocked_price:
+                unlocked_prices = list(map(clean_string_number, str(unlocked_price).replace("$", "").replace("*", "").split("/")))
+                self.data.iat[index, 9] = unlocked_prices
+
     def save_data(self, path: str) -> None:
         self.data.to_excel(path, index=False)
 
@@ -113,6 +136,7 @@ if __name__ == "__main__":
     pipeline.set_headers()
     pipeline.clean_prices()
     pipeline.clean_multi_values()
+    pipeline.format_prices()
     pipeline.print_data()
     pipeline.save_data("CleanedData.xlsx")
     # pipeline.clean_dates()
