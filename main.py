@@ -213,7 +213,7 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
     
-    # Extrapolate future prices
+   
     # Extrapolate future prices and add to the graph
     def extrapolate_price(future_date_str):
         future_date = pd.to_datetime(future_date_str, errors='coerce')
@@ -222,33 +222,40 @@ if __name__ == "__main__":
             return None, None
 
         # Calculate the number of days from the last known date
-        last_known_date = first_column_data.iloc[-1]
+        last_known_date = release_column_data.iloc[-1]
         days_from_last_known = (future_date - last_known_date).days
 
         # Extrapolate the price
-        future_index = len(first_column_data) + days_from_last_known
-        future_price = polynomial(future_index)
-        return future_date, future_price
+        future_index = len(release_column_data) + days_from_last_known
+        future_price_unlocked = polynomial(future_index)
+        future_price_carrier = polynomial(future_index)
+        return future_date, future_price_unlocked, future_price_carrier
 
     # Get user input for future dates
     future_dates = ["2025-09-16", "2026-09-16", "2028-09-16"]
     future_dates_dt = []
-    future_prices = []
+    future_prices_unlocked = []
+    future_prices_carrier = []
 
     for future_date in future_dates:
-        future_date_dt, future_price = extrapolate_price(future_date)
+        future_date_dt, future_price_unlocked, future_price_carrier = extrapolate_price(future_date)
         if future_date_dt is not None:
             future_dates_dt.append(future_date_dt)
-            future_prices.append(future_price)
+            future_prices_unlocked.append(future_price_unlocked)
+            future_prices_carrier.append(future_price_carrier)
 
     # Combine original and future data
-    all_dates = pd.concat([first_column_data, pd.Series(future_dates_dt)])
-    all_prices = pd.concat([launch_price_data, pd.Series(future_prices)])
+    all_dates = pd.concat([release_column_data, pd.Series(future_dates_dt)])
+    all_prices_unlocked = pd.concat([unlocked_avg_data, pd.Series(future_prices_unlocked)])
+    all_prices_carrier = pd.concat([carrier_avg_data, pd.Series(future_prices_carrier)])
 
     # Plot the extended data
-    plt.plot(first_column_data, launch_price_data, marker='o', linestyle='-', label='Launch Prices')
-    plt.plot(all_dates, all_prices, marker='x', linestyle='--', color='green', label='Extrapolated Prices')
-    plt.xlabel("Date")
+    plt.figure(figsize=(14, 8))
+    plt.plot(release_column_data, unlocked_avg_data, marker='o', linestyle='-', label='Unlocked Price Average')
+    plt.plot(release_column_data, carrier_avg_data, marker='o', linestyle='-', label='Carrier Price Average')
+    plt.plot(all_dates, all_prices_unlocked, marker='x', linestyle='--', color='orange', label='Extrapolated Unlocked Prices')
+    plt.plot(all_dates, all_prices_carrier, marker='x', linestyle='--', color='blue', label='Extrapolated Carrier Prices')
+    plt.xlabel("Release Dates")
     plt.ylabel("Launch price($)")
     plt.title("iPhone Launch Carrier Prices with Extrapolation")
     plt.xticks(rotation=90)
