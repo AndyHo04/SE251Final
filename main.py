@@ -172,13 +172,15 @@ if __name__ == "__main__":
     pipeline.save_data("CleanedData.xlsx")
 
     # Get the first column name
-    first_column_name = pipeline.data.columns[0]
+    first_column_name = pipeline.data.columns[2]
 
     # Access the first column data
     first_column_data = pipeline.data[first_column_name]
 
     # Drop NaN values from the first column data
     first_column_data = first_column_data.dropna()
+    
+    print(first_column_data)
 
     # Get the launch price column name
     launch_price_column_name = pipeline.data.columns[8]
@@ -200,10 +202,9 @@ if __name__ == "__main__":
     # Drop NaN values from the launch price data after extraction
     launch_price_data = launch_price_data.dropna()
 
-    # Ensure both series have the same length
-    min_length = min(len(first_column_data), len(launch_price_data))
-    first_column_data = first_column_data.iloc[:min_length]
-    launch_price_data = launch_price_data.iloc[:min_length]
+    # Ensure both series have the same length by aligning indices
+    first_column_data = first_column_data.reindex(launch_price_data.index)
+    launch_price_data = launch_price_data.reindex(first_column_data.index)
 
     # Fit a linear polynomial to the data
     coefficients = np.polyfit(range(len(first_column_data)), launch_price_data, 1)
@@ -215,8 +216,10 @@ if __name__ == "__main__":
     plt.plot(first_column_data, best_fit_line, color="red", linestyle="--", label="Best Fit Line")
     plt.xlabel("Date")
     plt.ylabel("Launch price($)")
-    plt.title("iPhone Launch Prices")
+    plt.title("iPhone Launch Carrier Prices")
     plt.xticks(rotation=90)
     plt.legend()
     plt.tight_layout()
     plt.show()
+    
+    
