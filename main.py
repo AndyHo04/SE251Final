@@ -1,8 +1,6 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from statistics import mean
-from numpy.polynomial.polynomial import Polynomial
 
 
 class Pipeline:
@@ -232,7 +230,6 @@ if __name__ == "__main__":
     predict_future_trendline(polynomial=unlocked_trendline_polynomial, last_index=liu, last_date=ldu, num_future_points=5, color='orange', column='unlocked avg')
     carrier_trendline_polynomial, lic, ldc = create_trendline("carrier avg", "blue")
     predict_future_trendline(polynomial=carrier_trendline_polynomial, last_index=lic, last_date=ldc, num_future_points=5, color='blue', column='carrier avg')
-    
 
     plt.xlabel("Release Dates")
     plt.ylabel("Launch price($)")
