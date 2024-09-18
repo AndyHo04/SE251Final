@@ -175,7 +175,7 @@ if __name__ == "__main__":
     
 
     # Get the first column name
-    first_column_name = pipeline.data.columns[0]
+    first_column_name = pipeline.data.columns[2]
 
     # Access the first column data
     first_column_data = pipeline.data[first_column_name]
