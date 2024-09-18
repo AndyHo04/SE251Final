@@ -170,9 +170,6 @@ if __name__ == "__main__":
     pipeline.format_dates()
     pipeline.print_data()
     pipeline.save_data("CleanedData.xlsx")
-    # pipeline.clean_dates()
-    # print(pipeline.get_phone_modes())
-    
 
     # Get the first column name
     first_column_name = pipeline.data.columns[0]
