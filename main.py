@@ -130,6 +130,27 @@ class Pipeline:
                 unlocked_prices = list(map(clean_string_number, str(unlocked_price).replace("$", "").replace("*", "").split("/")))
                 self.data.iat[index, 9] = unlocked_prices
 
+    def format_dates(self) -> None:
+        """
+        This method formats the dates in the dataframe as pandas datetime objects
+        """
+
+        for index in self.data.index:
+            release_date = self.data.iat[index, 2].split(" (")[0]
+            self.data.iat[index, 2] = pd.to_datetime(release_date, format="%B %d, %Y")
+            
+            discontinued_date = self.data.iat[index, 3]
+            if discontinued_date:
+                self.data.iat[index, 3] = pd.to_datetime(discontinued_date, format="%B %d, %Y")
+            
+            support_ended_date = self.data.iat[index, 4]
+            if support_ended_date != "current":
+                self.data.iat[index, 4] = pd.to_datetime(support_ended_date, format="%B %d, %Y")
+
+            late_support_ended_date = self.data.iat[index, 10]
+            if late_support_ended_date:
+                self.data.iat[index, 10] = pd.to_datetime(late_support_ended_date.split(": ")[1].split(")")[0], format="%B %d, %Y")
+
     def save_data(self, path: str) -> None:
         """
         This method saves the dataframe to an excel file
@@ -146,10 +167,11 @@ if __name__ == "__main__":
     pipeline.clean_prices()
     pipeline.clean_multi_values()
     pipeline.format_prices()
+    pipeline.format_dates()
     pipeline.print_data()
     pipeline.save_data("CleanedData.xlsx")
     # pipeline.clean_dates()
-    # print(pipeline.get_phone_models())
+    # print(pipeline.get_phone_modes())
     
 
     # Get the first column name
