@@ -1,8 +1,12 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime, date
 import re
 import _tkinter as tk
+from dataclasses import dataclass
+
+from pandas.core.api import isna
 
 
 class HeaderItem:
@@ -20,106 +24,157 @@ class HeaderItem:
         return self.__str__()
 
 
+@dataclass
+class phoneModel:
+    model_name: str
+    release_date: date
+    discontinued_date: date | None
+    launch_prices_carrier: list[float] | None = None
+    launch_prices_unlocked: list[float] | None = None
+
+
 class Pipeline:
-    def __init__(self, data):
-        self.data = data
+    def __init__(self, data: pd.DataFrame):
+        self.data: pd.DataFrame = data
         self.headers = {}
 
-    def _get_next_possible_parent(self, index: int, level: int) -> HeaderItem:
-        while index >= 0:
-            node = self.headers.get(index - 1, None)
-            while node.level >= 0:
-                if node.level < level:
-                    return node
-                node = node.parent
-            index -= 1
+    def set_headers(self) -> None:
+        self.data.columns = [".".join([str(col).strip(
+        ) for col in cols if "Unnamed" not in str(col)]) for cols in data.columns]
+        self.data = data.rename(columns={"launch price": "carrier price"})
+        self.data["unlocked price"] = ""
+        self.data["late support ended"] = ""
+        self.data["late final OS"] = ""
 
-    def get_index_value(self, index: int) -> HeaderItem:
-        return self.headers.get(index, None)
+    def print_data(self) -> None:
+        print(self.data.columns.tolist())
+        for index in self.data.index:
+            print(index, self.data.iloc[index].tolist())
 
-    def set_headers(self):
-        more_to_fulfill = True
-        current_row = 0
+    def clean_prices(self) -> None:
+        for index in self.data.index:
+            if index + 1 >= len(self.data):
+                break
 
-        while more_to_fulfill:
-            data = self.data.iloc[current_row].tolist()
+            if pd.isna(self.data.iloc[index+1, 0]):
+                if not pd.isna(self.data.iat[index + 1, 4]):
+                    self.data.iat[index, 10] = self.data.iat[index + 1, 4]
+                    self.data.iat[index, 11] = self.data.iat[index + 1, 5]
 
-            if pd.isna(data[current_row]):
-                more_to_fulfill = False
+                if str(self.data.iloc[index, 8]).endswith("*"):
+                    unlocked_prices = self.data.iat[index+1, 8]
+                    self.data.iat[index, 9] = unlocked_prices
+                    self.data.drop(index + 1, inplace=True)
+                else:
+                    self.data.iat[index, 9] = self.data.iat[index, 8]
+                    self.data.iat[index, 8] = ""
+            else:
+                if not str(self.data.iloc[index, 8]).endswith("*"):
+                    self.data.iat[index, 9] = self.data.iat[index, 8]
+                    self.data.iat[index, 8] = ""
+            
+            self.data.reset_index(drop=True, inplace=True)
+            
 
-            for index, value in enumerate(data):
-                if pd.isna(value):
-                    continue
+    def clean_multi_values(self) -> None:
+        for index in self.data.index:
+            if not pd.isna(self.data.iloc[index, 0]):
+                if " / " in str(self.data.iloc[index, 0]):
+                    models = self.data.iloc[index, 0].split(" / ")
+                    self.data.iat[index, 0] = models[0]
+                    self.data.iat[index + 1, 0] = "iPhone " + models[1]
+                if " / " in str(self.data.iloc[index, 1]):
+                    os_releases = self.data.iloc[index, 1].split(" / ")
+                    self.data.iat[index, 1] = os_releases[0].split(" (")[0]
+                    self.data.iat[index + 1, 1] = os_releases[1].split(" (")[0]
+                if " / " in str(self.data.iloc[index, 2]):
+                    release_dates = self.data.iloc[index, 2].split(" / ")
+                    self.data.iat[index, 2] = release_dates[0]
+                    self.data.iat[index + 1, 2] = release_dates[1].split(" (")[0]
 
-                current_index_value = self.headers.get(index, None)
-                item = HeaderItem(value, current_row, current_index_value)
-
-                if item.parent == None and item.level != 0:
-                    item.parent = self._get_next_possible_parent(index, item.level)
-
-                self.headers[index] = item
-
-            current_row += 1
-
-        for index, value in self.headers.items():
-            print(f"Index: {index}, Value: {value}")
+            if index + 1 >= len(self.data):
+                break
+            
+            self.data.iat[index + 1, 3] = self.data.iat[index, 3]
+            self.data.iat[index + 1, 4] = self.data.iat[index, 4]
+            self.data.iat[index + 1, 5] = self.data.iat[index, 5]
+            self.data.iat[index + 1, 6] = self.data.iat[index, 6]
+            self.data.iat[index + 1, 7] = self.data.iat[index, 7]
+    
+    def save_data(self, path: str) -> None:
+        self.data.to_excel(path, index=False)
 
 
 if __name__ == "__main__":
-    data = pd.read_excel("SeedUnofficialAppleData.xlsx")
+    data = pd.read_excel("SeedUnofficialAppleData.xlsx",
+                         skiprows=1, header=[0, 1, 2])
+    data.replace("\xa0", " ", regex=True, inplace=True)
     pipeline = Pipeline(data)
     pipeline.set_headers()
-    value = pipeline.get_index_value(8)
-    #print(value)
-   
-   # Get the first column name
+    pipeline.clean_prices()
+    pipeline.clean_multi_values()
+    pipeline.print_data()
+    pipeline.save_data("CleanedData.xlsx")
+    # pipeline.clean_dates()
+    # print(pipeline.get_phone_models())
+
+    exit()
+
+    # Get the first column name
     first_column_name = data.columns[0]
-    
-    #drop the first value of the first column
+
+    # drop the first value of the first column
     data = data.drop(data.index[0])
-    
+
     # Access the first column data
     first_column_data = data[first_column_name]
-    
+
     # Drop NaN values from the first column data
     first_column_data = first_column_data.dropna()
-    
+
     # Get the launch price column name
     launch_price_column_name = data.columns[-1]
-    
+
     # Access the launch price column data
     launch_price_data = data[launch_price_column_name]
-    
+
     # Drop NaN values from the launch price data
     launch_price_data = launch_price_data.dropna()
-    
+
     # Extract numerical values from the launch price data
     def extract_price(price_str):
         price_str = str(price_str)
-        match = re.search(r'\d+', price_str.replace(',', ''))
+        match = re.search(r"\d+", price_str.replace(",", ""))
         return float(match.group()) if match else np.nan
-    
+
     launch_price_data = launch_price_data.apply(extract_price)
-    
+
     # Drop NaN values from the launch price data after extraction
     launch_price_data = launch_price_data.dropna()
-    
+
     # Ensure both series have the same length
     min_length = min(len(first_column_data), len(launch_price_data))
     first_column_data = first_column_data.iloc[:min_length]
     launch_price_data = launch_price_data.iloc[:min_length]
-    
+
     # Fit a linear polynomial to the data
-    coefficients = np.polyfit(range(len(first_column_data)), launch_price_data, 1)
+    coefficients = np.polyfit(
+        range(len(first_column_data)), launch_price_data, 1)
     polynomial = np.poly1d(coefficients)
     best_fit_line = polynomial(range(len(first_column_data)))
-    
+
     # Plot the data
     plt.plot(first_column_data, launch_price_data)
-    plt.plot(first_column_data, best_fit_line, color='red', linestyle='--', label='Best Fit Line')
+    plt.plot(
+        first_column_data,
+        best_fit_line,
+        color="red",
+        linestyle="--",
+        label="Best Fit Line",
+    )
     plt.xlabel("IPhone models")
     plt.ylabel("Launch price($)")
-    plt.title('IPhone launch prices')
+    plt.title("IPhone launch prices")
     plt.xticks(rotation=90)
     plt.tight_layout()
     plt.show()
