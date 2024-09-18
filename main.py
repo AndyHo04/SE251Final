@@ -192,8 +192,26 @@ if __name__ == "__main__":
         else:
             last_graphed = txt.split(" ")[1][:1]
 
-        plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['unlocked avg'][i]), textcoords="offset points", xytext=(0,-15), ha='center', fontsize=9)
-        plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['carrier avg'][i]), textcoords="offset points", xytext=(0,-15), ha='center', fontsize=9)
+        plt.annotate(
+            txt,
+            xy=(pipeline.data['release(d).date'][i], pipeline.data['unlocked avg'][i]),
+            xytext=(-45, 45),
+            textcoords="offset points",
+            ha='center',
+            fontsize=9,
+            arrowprops=dict(arrowstyle='-', color='black')  # Add arrowprops to draw a line
+        )
+        plt.annotate(
+            txt,
+            xy=(pipeline.data['release(d).date'][i], pipeline.data['carrier avg'][i]),
+            xytext=(-20, -30),
+            textcoords="offset points",
+            ha='center',
+            fontsize=9,
+            arrowprops=dict(arrowstyle='-', color='black')  # Add arrowprops to draw a line
+        )
+        # plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['unlocked avg'][i]), textcoords="offset points", xytext=(0,-15), ha='center', fontsize=9)
+        # plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['carrier avg'][i]), textcoords="offset points", xytext=(0,-15), ha='center', fontsize=9)
 
     
     def create_trendline(column: str, color: str):
