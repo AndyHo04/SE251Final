@@ -171,8 +171,6 @@ if __name__ == "__main__":
     pipeline.format_dates()
     pipeline.save_data("CleanedData.xlsx")
 
-    future_dates = ["2025-09-16", "2026-09-16", "2028-09-16"]
-
     pipeline.data['carrier price'] = pipeline.data['carrier price'].apply(lambda x: x if x != '' else np.nan).dropna()
     pipeline.data['unlocked price'] = pipeline.data['unlocked price'].apply(lambda x: x if x != '' else np.nan).dropna()
 
@@ -199,7 +197,7 @@ if __name__ == "__main__":
             textcoords="offset points",
             ha='center',
             fontsize=9,
-            arrowprops=dict(arrowstyle='-', color='black')  # Add arrowprops to draw a line
+            arrowprops=dict(arrowstyle='-', color='black')
         )
         plt.annotate(
             txt,
@@ -208,11 +206,8 @@ if __name__ == "__main__":
             textcoords="offset points",
             ha='center',
             fontsize=9,
-            arrowprops=dict(arrowstyle='-', color='black')  # Add arrowprops to draw a line
+            arrowprops=dict(arrowstyle='-', color='black')
         )
-        # plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['unlocked avg'][i]), textcoords="offset points", xytext=(0,-15), ha='center', fontsize=9)
-        # plt.annotate(txt, (pipeline.data['release(d).date'][i], pipeline.data['carrier avg'][i]), textcoords="offset points", xytext=(0,-15), ha='center', fontsize=9)
-
     
     def create_trendline(column: str, color: str):
         release_column_data = pipeline.data["release(d).date"].dropna()
@@ -223,29 +218,25 @@ if __name__ == "__main__":
         coefficient = np.polyfit(range(len(release_column_data)), column_data, 1)
         polynomial = np.poly1d(coefficient)    
         best_fit_line = polynomial(range(len(release_column_data)))
-        plt.plot(release_column_data, best_fit_line, label=f"{column} Trendline", linestyle='--', color=color)
+        plt.plot(release_column_data, best_fit_line, label=f"{column.capitalize().replace(" avg", "")} Trendline", linestyle='--', color=color)
         
         return polynomial, len(release_column_data) - 1, release_column_data.iloc[-1]
-        
 
     def predict_future_trendline(polynomial, last_index, last_date, num_future_points: int, color: str, column: str):
         future_indices = np.arange(last_index + 1, last_index + 1 + num_future_points)
         future_y = polynomial(future_indices)
         date_range = pd.date_range(start=last_date + pd.DateOffset(days=1), periods=num_future_points, freq='YS')
-        plt.plot(date_range, future_y, label=f"{column} Future Trendline", linestyle=':', color=color)
-          
+        plt.plot(date_range, future_y, label=f"{column.capitalize().replace(" avg", "")} Future Trendline", linestyle=':', color=color)
 
     unlocked_trendline_polynomial, liu, ldu = create_trendline("unlocked avg", "orange")
     predict_future_trendline(polynomial=unlocked_trendline_polynomial, last_index=liu, last_date=ldu, num_future_points=5, color='orange', column='unlocked avg')
-    
-    
     carrier_trendline_polynomial, lic, ldc = create_trendline("carrier avg", "blue")
     predict_future_trendline(polynomial=carrier_trendline_polynomial, last_index=lic, last_date=ldc, num_future_points=5, color='blue', column='carrier avg')
     
 
     plt.xlabel("Release Dates")
     plt.ylabel("Launch price($)")
-    plt.title("iPhone Launch Carrier Prices")
+    plt.title("iPhone Prices")
     plt.xticks(rotation=90)
     plt.legend()
     plt.tight_layout()
